@@ -1,0 +1,322 @@
+
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Todo List — Minimal</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#7c3aed;
+      --accent-2:#06b6d4; --success:#16a34a; --danger:#ef4444;
+      color-scheme: dark;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,#071025 0%,var(--bg) 100%); color:#e6eef6;
+      display:flex; align-items:center; justify-content:center; min-height:100vh;
+      padding:24px;
+    }
+    .wrap{
+      width:100%; max-width:720px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.05));
+      border-radius:14px; padding:20px; box-shadow:0 8px 30px rgba(2,6,23,0.6);
+      border:1px solid rgba(255,255,255,0.04);
+    }
+    header{display:flex; align-items:center; gap:12px; margin-bottom:14px}
+    header h1{font-size:20px; margin:0}
+    .new{
+      display:flex; gap:8px; margin-bottom:16px;
+    }
+    .new input{
+      flex:1; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+      background:transparent; color:inherit; outline:none; font-size:15px;
+    }
+    .btn{
+      padding:10px 14px; border-radius:10px; background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      border:none; color:white; font-weight:600; cursor:pointer;
+    }
+    .controls{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap}
+    .filters{display:flex; gap:8px}
+    .filter{
+      padding:6px 10px; border-radius:8px; background:transparent; border:1px solid rgba(255,255,255,0.03); cursor:pointer;
+      color:var(--muted); font-size:13px;
+    }
+    .filter.active{background:rgba(124,58,237,0.12); color:var(--accent);}
+    ul.todos{list-style:none; padding:0; margin:0; display:grid; gap:8px; max-height:52vh; overflow:auto}
+    li.todo{
+      display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02));
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    li.todo .check{
+      width:20px; height:20px; border-radius:6px; display:inline-grid; place-items:center; cursor:pointer;
+      border:1px solid rgba(255,255,255,0.06);
+    }
+    li.todo.completed .check{background:linear-gradient(90deg,var(--success),#60a5fa); border:none; color:white}
+    li.todo .text{flex:1; font-size:15px; word-break:break-word}
+    li.todo.completed .text{opacity:0.6; text-decoration:line-through}
+    .actions{display:flex; gap:8px}
+    .icon-btn{background:transparent; border:none; padding:6px; border-radius:8px; cursor:pointer; color:var(--muted)}
+    .icon-btn:hover{background:rgba(255,255,255,0.02); color:inherit}
+    .count{color:var(--muted); font-size:13px}
+    .clear{background:transparent; border:1px solid rgba(255,255,255,0.03); padding:6px 10px; border-radius:8px; cursor:pointer; color:var(--muted)}
+    .editable{padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); color:inherit}
+    .empty{color:var(--muted); padding:18px; text-align:center}
+    footer{margin-top:12px; display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap}
+    @media (max-width:520px){ header h1{font-size:18px} .btn{padding:10px} }
+  </style>
+</head>
+<body>
+  <main class="wrap" aria-labelledby="title">
+    <header>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect width="24" height="24" rx="6" fill="url(#g)"/>
+        <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
+      </svg>
+      <div>
+        <h1 id="title">My Todo List</h1>
+        <div class="count" id="instruct">Yangi vazifa qoʻshing — Enter yoki + tugmasi</div>
+      </div>
+    </header>
+
+    <div class="new" role="region" aria-label="Add todo">
+      <input id="newInput" placeholder="Nimani bajarish kerak?" aria-label="Yangi vazifa" />
+      <button class="btn" id="addBtn" aria-label="Add">+ Qoʻshish</button>
+    </div>
+
+    <div class="controls">
+      <div class="filters" role="tablist" aria-label="Filters">
+        <button class="filter active" data-filter="all">Hammasi</button>
+        <button class="filter" data-filter="active">Aktiv</button>
+        <button class="filter" data-filter="completed">Bajarilgan</button>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center">
+        <button class="clear" id="clearCompleted">Clear completed</button>
+      </div>
+    </div>
+
+    <ul class="todos" id="todoList" aria-live="polite"></ul>
+
+    <div class="empty" id="empty" hidden>Roʻyxatda vazifa yoʻq — birinchi vazifani qoʻshing!</div>
+
+    <footer>
+      <div class="count" id="itemsLeft">0 ta vazifa</div>
+      <div style="display:flex; gap:8px">
+        <button class="clear" id="export">Export</button>
+        <button class="clear" id="import">Import</button>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // Simple todo app with localStorage
+    const STORAGE_KEY = 'my_todos_v1';
+    let todos = [];
+
+    // DOM refs
+    const newInput = document.getElementById('newInput');
+    const addBtn = document.getElementById('addBtn');
+    const todoList = document.getElementById('todoList');
+    const itemsLeft = document.getElementById('itemsLeft');
+    const filters = document.querySelectorAll('.filter');
+    const clearCompletedBtn = document.getElementById('clearCompleted');
+    const emptyMsg = document.getElementById('empty');
+    const exportBtn = document.getElementById('export');
+    const importBtn = document.getElementById('import');
+
+    let filter = 'all';
+
+    // load
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        todos = raw ? JSON.parse(raw) : [];
+      }catch(e){ todos = [] }
+      render();
+    }
+
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(todos)); }
+
+    function addTodo(text){
+      if(!text || !text.trim()) return;
+      todos.unshift({ id: Date.now().toString(), text: text.trim(), done:false });
+      save(); render();
+    }
+
+    function toggleDone(id){
+      const t = todos.find(x=>x.id===id); if(!t) return;
+      t.done = !t.done; save(); render();
+    }
+
+    function removeTodo(id){
+      todos = todos.filter(x=>x.id!==id); save(); render();
+    }
+
+    function editTodo(id, newText){
+      const t = todos.find(x=>x.id===id); if(!t) return;
+      t.text = newText.trim(); save(); render();
+    }
+
+    function clearCompleted(){
+      todos = todos.filter(x=>!x.done); save(); render();
+    }
+
+    function filteredList(){
+      if(filter==='all') return todos;
+      if(filter==='active') return todos.filter(x=>!x.done);
+      return todos.filter(x=>x.done);
+    }
+
+    function render(){
+      const list = filteredList();
+      todoList.innerHTML = '';
+      if(list.length===0){
+        emptyMsg.hidden = todos.length>0; // if there are todos but filter shows none, show empty too
+      } else {
+        emptyMsg.hidden = true;
+      }
+      for(const t of list){
+        const li = document.createElement('li');
+        li.className = 'todo' + (t.done ? ' completed' : '');
+        li.dataset.id = t.id;
+
+        // checkbox
+        const chk = document.createElement('button');
+        chk.className = 'check';
+        chk.setAttribute('aria-label','Toggle completed');
+        chk.innerHTML = t.done ? '&#10003;' : '';
+        chk.addEventListener('click', ()=> toggleDone(t.id));
+
+        // text
+        const span = document.createElement('div');
+        span.className = 'text';
+        span.textContent = t.text;
+        span.tabIndex = 0;
+        span.title = 'Double-click to edit';
+        // edit on double click
+        span.addEventListener('dblclick', ()=> makeEditable(span, t.id));
+        // allow Enter to edit
+        span.addEventListener('keydown', (e)=> {
+          if(e.key==='Enter') makeEditable(span, t.id);
+        });
+
+        // actions
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const del = document.createElement('button');
+        del.className = 'icon-btn';
+        del.setAttribute('aria-label','Delete');
+        del.innerHTML = '🗑';
+        del.addEventListener('click', ()=> removeTodo(t.id));
+
+        actions.appendChild(del);
+
+        li.appendChild(chk);
+        li.appendChild(span);
+        li.appendChild(actions);
+
+        todoList.appendChild(li);
+      }
+
+      // items left text
+      const left = todos.filter(x=>!x.done).length;
+      itemsLeft.textContent = `${left} ta vazifa qolgan`;
+    }
+
+    function makeEditable(span, id){
+      const original = span.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = original;
+      input.className = 'editable';
+      span.replaceWith(input);
+      input.focus();
+      // put cursor at end
+      input.selectionStart = input.selectionEnd = input.value.length;
+
+      function finish(saveFlag){
+        if(saveFlag){
+          const val = input.value.trim();
+          if(val) editTodo(id, val);
+          else removeTodo(id); // if empty after edit, remove
+        } else {
+          render(); // revert display
+        }
+      }
+
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ finish(true); }
+        else if(e.key === 'Escape'){ finish(false); }
+      });
+      input.addEventListener('blur', ()=> finish(true));
+    }
+
+    // events
+    addBtn.addEventListener('click', ()=> {
+      addTodo(newInput.value);
+      newInput.value = '';
+      newInput.focus();
+    });
+    newInput.addEventListener('keydown', (e)=> {
+      if(e.key === 'Enter'){ addBtn.click(); }
+    });
+
+    filters.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        filters.forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        filter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    clearCompletedBtn.addEventListener('click', ()=> {
+      clearCompleted();
+    });
+
+    // Export / Import
+    exportBtn.addEventListener('click', ()=>{
+      const data = JSON.stringify(todos, null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'todos.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    importBtn.addEventListener('click', ()=>{
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = 'application/json';
+      input.addEventListener('change', (e)=>{
+        const f = e.target.files[0];
+        if(!f) return;
+        const reader = new FileReader();
+        reader.onload = ev=>{
+          try{
+            const data = JSON.parse(ev.target.result);
+            if(Array.isArray(data)){
+              // basic validation: items need id,text,done
+              const ok = data.every(x=>x.id && typeof x.text === 'string' && typeof x.done === 'boolean');
+              if(ok){ todos = data; save(); render(); return; }
+            }
+            alert('Noto\'g\'ri format — JSON array kutilmoqda.');
+          }catch(err){
+            alert('Faylni o\'qishda xatolik.');
+          }
+        };
+        reader.readAsText(f);
+      });
+      input.click();
+    });
+
+    // initial
+    load();
+
+    // accessibility: announce when saved
+    window.addEventListener('storage', ()=> load());
+  </script>
+</body>
+</html>
